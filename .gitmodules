@@ -5,3 +5,6 @@
 	path = externals/PhysX
 	url = git://github.com/NVIDIAGameWorks/PhysX.git
 	branch = 4.1
+[submodule "externals/vcpkg"]
+	path = externals/vcpkg
+	url = https://github.com/Microsoft/vcpkg.git

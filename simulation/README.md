@@ -11,3 +11,13 @@ Run the install.sh script in the root directory. This will build Cinder, PhysX a
 3. Generate courses for the Go-Kart to race around in.
 4. Introduce more Go-Karts and have the Go-Karts race autonomously.
 
+## High Level Process
+
+1. GUI window, including sidebar is created in Simulation.h/cpp. During setup(), the world is initialized with all the meshes that will take part in the simulation. The meshes are created as Cinder Source shapes, then converted into GL batches.
+2. PhysX uses its own library's shapes, so the meshes created in Cinder Sources are re-created in PhysX, along with collision boundaries and event queries.
+3. On every draw cycle in Cinder, the PhysX simulate function is called, blocking drawing until new poses for each active actor are obtained.
+4. The GL matricies are transformed in Cinder by the new world pose provided by PhysX.
+
+## Testing
+
+Testing executable builds under `/build/Simulation_Tests/debug/Simulation_Tests`

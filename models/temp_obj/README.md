@@ -1,0 +1,1 @@
+Temporary OBJ meshes until we have new ones. Grabbed from https://www.myminifactory.com/object/3d-print-slot-car-go-kart-fits-scalextric-5630  

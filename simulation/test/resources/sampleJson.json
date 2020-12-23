@@ -1,0 +1,19 @@
+[
+    {
+        "name": "kart1",
+        "startingPosition": [1, 0, 0],
+        "startingRotation": [1.0, 0.0, 0.0],
+        "wheelMass": 1.0,
+        "wheelRadius": 1.0,
+        "wheelWidth": 1.0,
+        "numWheels": 4,
+        "wheelCenterActorOffsets": [1, 0, 0],
+
+        "chassisCMOffset": [0, 0, 0],
+        "chassisMass": 1.0,
+        "chassisDims": [1, 1, 1],
+
+        "motorPeakTorque": 500.0,
+        "motorMaxOmega": 600.0
+    }
+]

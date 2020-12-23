@@ -1,5 +1,5 @@
 #include "Simulation.h"
-#include "PhysxBase.h"
+#include "PhysxIntegration.h"
 #include "Sidebar.cpp"
 
 bool isInitPhysics = false;
@@ -9,10 +9,13 @@ void Simulation::draw()
 	onDraw(mCam, false);
 
 	// Draw the settings widget
-	settingsSideBarParameters->draw();
+	settingsSidebarParameters->draw();
 
 	// interact with physics engine
-	if (isInitPhysics) stepPhysics();
+	if (isInitPhysics) {
+		if(!gVehicleOrderComplete) stepVehiclePhysics();
+		stepPhysics();
+	}
 
 	// draw scene
 	drawSimulationObjects(this->simulationObjectsMap);
@@ -35,14 +38,17 @@ void Simulation::setup()
 
 	/***** Create Settings Widget *****/
 
-	// Create an SettingsSideBarStruct to keep track of the selected object
-	this->settingsSideBar = SettingsSideBarStruct();
+	// Create an SettingsSidebarStruct to keep track of the selected object
+	this->settingsSidebar = SettingsSidebarStruct();
 	// Generate Settings widget
-	updateSettingsSideBarParameters(true);
+	updateSettingsSidebarParameters(true);
 
 	
 	/***** Load models *****/
 	initPhysics();
+	initVehiclePhysics();
+	initWorld();
+	updateSettingsSidebarParameters(true);
 	isInitPhysics = true;
 }
 
@@ -84,4 +90,31 @@ void Simulation::createSimulationObject(string objectId, PxRigidActor* actor, ge
 	this->simulationObjectsMap[objectId] = simulationObject;
 }
 
-CINDER_APP(Simulation, RendererGl(RendererGl::Options().msaa(16)), prepareSettingsSideBar) // render with anti-aliassing
+// enum collision_flags {
+// 	collision_ground = 1 << 0,
+// 	collision_wheel = 1 << 1,
+// 	collision_chassis = 1 << 2,
+// 	collision_obstruction = 1 << 3
+// };
+void Simulation::initWorld() {
+
+	// Create ground plane
+	{
+		// PxFilterData queryFilterData(0, 0, collision_flags::collision_ground, 0);
+		// PxFilterData simulationFilterData(collision_flags::collision_ground, collision_flags::collision_chassis, 0, 0);
+		PxPlane groundPlaneShape = PxPlane(0,1,0,0);
+		// groundPlaneShape.setQueryFilterData(rayCastFilterData);
+		// groundPlaneShape.setSimulationFilterData(simFilterData);
+		PxRigidStatic* groundPlaneActor = PxCreatePlane(*gPhysics, groundPlaneShape, *gMaterial);
+
+		gScene->addActor(*groundPlaneActor);
+
+		geom::SourceMods geomGroundPlaneShape = geom::Cube() >> geom::Scale(glm::vec3(0.1, 200, 200));
+		ci::ColorA whiteColor = ci::ColorA( CM_RGB, 1, 1, 1, 1 );
+
+		createSimulationObject("ground", groundPlaneActor, geomGroundPlaneShape, NULL, &whiteColor);
+	}
+	
+}
+
+CINDER_APP(Simulation, RendererGl(RendererGl::Options().msaa(16)), prepareSettingsSidebar) // render with anti-aliassing

@@ -1,8 +1,20 @@
 message("Building simulation") 
-project( Simulation ) 
+project( Simulation )
 get_filename_component( APP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/" ABSOLUTE )
 
 include("${CINDER_EXTRN_PATH}/proj/cmake/modules/cinderMakeApp.cmake")
+
+#### Add snippetvehiclecommon sources ####
+set (snippetvehiclecommon_DIR "${PHYSX_EXTRN_PATH}/snippets/snippetvehiclecommon")
+include_directories("${snippetvehiclecommon_DIR}")
+set (snippetvehiclecommon_SOURCES 
+	${snippetvehiclecommon_DIR}/SnippetVehicleSceneQuery.cpp 
+	${snippetvehiclecommon_DIR}/SnippetVehicleFilterShader.cpp
+	${snippetvehiclecommon_DIR}/SnippetVehicleTireFriction.cpp
+	${snippetvehiclecommon_DIR}/SnippetVehicleCreate.cpp
+	${snippetvehiclecommon_DIR}/SnippetVehicle4WCreate.cpp
+)
+
 
 #### Build PhysX library ####
 # PHYSX_PATH - path to the `{cloned repository}/physx` directory git://github.com/NVIDIAGameWorks/PhysX.git
@@ -45,11 +57,11 @@ SET(CMAKE_BUILD_TYPE "" CACHE PATH "Current build configuration")
 
 #### Build Cinder dependencies and main executable ####
 ci_make_app(
-	SOURCES		${APP_PATH}/Simulation.cpp
+	SOURCES		${APP_PATH}/Simulation.cpp ${snippetvehiclecommon_SOURCES}
 	INCLUDES	${APP_PATH}/include ${PHYSX_INCLUDE_DIRS}
 	CINDER_PATH ${CINDER_EXTRN_PATH}
   	RESOURCES   ${APP_PATH}/resources/cinder_app_icon.ico
-	LIBRARIES ${PHYSX_LIBRARIES} #same as `target_link_libraries(Simulation cinder ${PHYSX_LIBRARIES})`
+	LIBRARIES   ${PHYSX_LIBRARIES} ${VCPKG_LIBRARIES} #same as `target_link_libraries(Simulation cinder ${PHYSX_LIBRARIES})`
 )
 
 #### Windows only: Copy the Physx dll files to the simulation executable####
@@ -65,9 +77,20 @@ if (TARGET_BUILD_PLATFORM STREQUAL "windows")
 	set(PhysxOutputPath ${PX_OUTPUT_LIB_DIR}/bin/${PLATFORM_BIN_NAME}/)
 	message("Physx Output Path: " ${PhysxOutputPath})
 
-	# Create a command to run every time target is built:
+	# copy PhysX dll's to build dir. Happens on every build.
 	add_custom_command(TARGET Simulation POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory "${PhysxOutputPath}" "$<TARGET_FILE_DIR:Simulation>/..")
+endif()
+
+
+# copy resources directory to build dir:
+add_custom_command(TARGET Simulation POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory "${APP_PATH}/resources/" "$<TARGET_FILE_DIR:Simulation>/resources")
+
+# tests	
+include(CTest)
+if(BUILD_TESTING)
+  add_subdirectory(test)
 endif()
 
 

@@ -18,15 +18,16 @@ class Simulation : public App {
 	void update() override;
 	void draw() override;
 	void resize();
-	void updateSettingsSideBarParameters(bool updateNamesOfObjectsList);
+	void updateSettingsSidebarParameters(bool updateNamesOfObjectsList);
 	void createSimulationObject(string objectId, PxRigidActor* actor, geom::SourceMods shape, gl::GlslProgRef shader, ci::ColorA* color);
-	void initPhysics();
+	void initWorld();
   private:
   	CameraPersp	mCam;
 	CameraUi mCameraUi;
 	std::map<std::string, SimulationObject::type> simulationObjectsMap;
-	SettingsSideBarStruct::type settingsSideBar;
-	params::InterfaceGlRef settingsSideBarParameters;
+	SettingsSidebarStruct::type settingsSidebar;
+	params::InterfaceGlRef settingsSidebarParameters;
 	bool mPrintFps;
 };
+
 #endif

@@ -1,2 +1,5 @@
 .vscode
 /build
+
+.install_script.log
+.test_script.log
