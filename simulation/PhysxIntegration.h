@@ -4,19 +4,20 @@
 #include <ctype.h>
 #include "PxConfig.h"
 #include "PxPhysicsAPI.h"
-
 #include "vehicle/PxVehicleUtil.h"
+
 // Located at ${PHYSX_EXTRN_PATH}/snippets/snippetvehiclecommon:
 #include "SnippetVehicleSceneQuery.h"
 #include "SnippetVehicleFilterShader.h"
 #include "SnippetVehicleTireFriction.h"
 #include "SnippetVehicleCreate.h"
 
+#include "./VehicleConfig.h"
+
 
 using namespace physx;
 using namespace snippetvehicle;
 
-#include "./VehicleConfig.h"
 
 const float gTimestep = 1.0f/60.0f;
 
@@ -35,7 +36,7 @@ void initPhysics()
 
 	PxTolerancesScale tolerance = PxTolerancesScale();
 	tolerance.length = 1;
-	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, tolerance,true);
+	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, tolerance, true);
 
 	PxSceneDesc sceneDesc(tolerance);
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
@@ -90,7 +91,7 @@ PxVehicleDrivableSurfaceToTireFrictionPairs* gFrictionPairs = NULL;
 PxRigidStatic* gGroundPlane = NULL;
 PxVehicleDrive4W* gVehicle4W = NULL;
 
-bool gIsVehicleInAir = true;
+bool gIsVehicleInAir = false;
 
 // based on physx\snippets\snippetvehicle4w\SnippetVehicle4W.cpp
 PxF32 gSteerVsForwardSpeedData[2*8] =
@@ -178,11 +179,7 @@ DriveMode gDriveModeOrder[] =
 	eDRIVE_MODE_NONE
 };
 
-PxF32 gVehicleModeLifetime = 4.0f;
-PxF32 gVehicleModeTimer = 0.0f;
-PxU32 gVehicleOrderProgress = 0;
-bool gVehicleOrderComplete = false;
-bool gMimicKeyInputs = false;
+bool gMimicKeyInputs = true;
 
 VehicleDesc initVehicleDesc()
 {
@@ -370,75 +367,73 @@ void initVehiclePhysics()
 	gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
 	gVehicle4W->mDriveDynData.setUseAutoGears(true);
 
-	gVehicleModeTimer = 0.0f;
-	gVehicleOrderProgress = 0;
-	startBrakeMode();
+	// startBrakeMode();
 }
 
-void incrementDrivingMode(const PxF32 timestep)
-{
-	gVehicleModeTimer += timestep;
-	if(gVehicleModeTimer > gVehicleModeLifetime)
-	{
-		//If the mode just completed was eDRIVE_MODE_ACCEL_REVERSE then switch back to forward gears.
-		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
-		{
-			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
-		}
+// void incrementDrivingMode(const PxF32 timestep)
+// {
+// 	gVehicleModeTimer += timestep;
+// 	if(gVehicleModeTimer > gVehicleModeLifetime)
+// 	{
+// 		//If the mode just completed was eDRIVE_MODE_ACCEL_REVERSE then switch back to forward gears.
+// 		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
+// 		{
+// 			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+// 		}
 
-		//Increment to next driving mode.
-		gVehicleModeTimer = 0.0f;
-		gVehicleOrderProgress++;
-		releaseAllControls();
+// 		//Increment to next driving mode.
+// 		gVehicleModeTimer = 0.0f;
+// 		gVehicleOrderProgress++;
+// 		releaseAllControls();
 
-		//If we are at the end of the list of driving modes then start again.
-		if(eDRIVE_MODE_NONE == gDriveModeOrder[gVehicleOrderProgress])
-		{
-			gVehicleOrderProgress = 0;
-			gVehicleOrderComplete = true;
-		}
+// 		//If we are at the end of the list of driving modes then start again.
+// 		if(eDRIVE_MODE_NONE == gDriveModeOrder[gVehicleOrderProgress])
+// 		{
+// 			gVehicleOrderProgress = 0;
+// 			gVehicleOrderComplete = true;
+// 		}
 
-		//Start driving in the selected mode.
-		DriveMode eDriveMode = gDriveModeOrder[gVehicleOrderProgress];
-		switch(eDriveMode)
-		{
-		case eDRIVE_MODE_ACCEL_FORWARDS:
-			startAccelerateForwardsMode();
-			break;
-		case eDRIVE_MODE_ACCEL_REVERSE:
-			startAccelerateReverseMode();
-			break;
-		case eDRIVE_MODE_HARD_TURN_LEFT:
-			startTurnHardLeftMode();
-			break;
-		case eDRIVE_MODE_HANDBRAKE_TURN_LEFT:
-			startHandbrakeTurnLeftMode();
-			break;
-		case eDRIVE_MODE_HARD_TURN_RIGHT:
-			startTurnHardRightMode();
-			break;
-		case eDRIVE_MODE_HANDBRAKE_TURN_RIGHT:
-			startHandbrakeTurnRightMode();
-			break;
-		case eDRIVE_MODE_BRAKE:
-			startBrakeMode();
-			break;
-		case eDRIVE_MODE_NONE:
-			break;
-		};
+// 		//Start driving in the selected mode.
+// 		DriveMode eDriveMode = gDriveModeOrder[gVehicleOrderProgress];
+// 		switch(eDriveMode)
+// 		{
+// 		case eDRIVE_MODE_ACCEL_FORWARDS:
+// 			startAccelerateForwardsMode();
+// 			break;
+// 		case eDRIVE_MODE_ACCEL_REVERSE:
+// 			startAccelerateReverseMode();
+// 			break;
+// 		case eDRIVE_MODE_HARD_TURN_LEFT:
+// 			startTurnHardLeftMode();
+// 			break;
+// 		case eDRIVE_MODE_HANDBRAKE_TURN_LEFT:
+// 			startHandbrakeTurnLeftMode();
+// 			break;
+// 		case eDRIVE_MODE_HARD_TURN_RIGHT:
+// 			startTurnHardRightMode();
+// 			break;
+// 		case eDRIVE_MODE_HANDBRAKE_TURN_RIGHT:
+// 			startHandbrakeTurnRightMode();
+// 			break;
+// 		case eDRIVE_MODE_BRAKE:
+// 			startBrakeMode();
+// 			break;
+// 		case eDRIVE_MODE_NONE:
+// 			break;
+// 		};
 
-		//If the mode about to start is eDRIVE_MODE_ACCEL_REVERSE then switch to reverse gears.
-		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
-		{
-			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
-		}
-	}
-}
+// 		//If the mode about to start is eDRIVE_MODE_ACCEL_REVERSE then switch to reverse gears.
+// 		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
+// 		{
+// 			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
+// 		}
+// 	}
+// }
 
 void stepVehiclePhysics()
 {
 	//Cycle through the driving modes to demonstrate how to accelerate/reverse/brake/turn etc.
-	incrementDrivingMode(gTimestep);
+	//incrementDrivingMode(gTimestep);
 
 	//Update the control inputs for the vehicle.
 	if(gMimicKeyInputs)
@@ -463,7 +458,7 @@ void stepVehiclePhysics()
 	PxVehicleUpdates(gTimestep, grav, *gFrictionPairs, 1, vehicles, vehicleQueryResults);
 
 	//Work out if the vehicle is in the air.
-	gIsVehicleInAir = gVehicle4W->getRigidDynamicActor()->isSleeping() ? false : PxVehicleIsInAir(vehicleQueryResults[0]);
+	// gIsVehicleInAir = gVehicle4W->getRigidDynamicActor()->isSleeping() ? false : PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
 	

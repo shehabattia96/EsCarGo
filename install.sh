@@ -50,12 +50,17 @@ if (($BUILD_ONLY == 0)); then
     log "Running $vcpkg_DIR/vcpkg integrate install"
     "$vcpkg_DIR/vcpkg" integrate install
 
-    # Install jsoncpp
-    # log "Running $vcpkg_DIR/vcpkg install json11:x64-$BUILD_OS"
-    # "$vcpkg_DIR/vcpkg" install json11:x64-$BUILD_OS
-
+    # Install catch2
     log "Running $vcpkg_DIR/vcpkg install catch2:x64-$BUILD_OS"
     "$vcpkg_DIR/vcpkg" install catch2:x64-$BUILD_OS
+
+    # Install physx
+    physxStaticSuffix=""
+    if (($BUILD_OS == "windows"))
+        physxStaticSuffix="-static"
+    fi
+    log "Running $vcpkg_DIR/vcpkg install physx:x64-$BUILD_OS$physxStaticSuffix"
+    "$vcpkg_DIR/vcpkg" install physx:x64-$BUILD_OS$physxStaticSuffix
 
     # Build Cinder -- assumes it's under externals/Cinder-Simulation-App and assumes you have CMAKE installed and configured.
     log "Building Cinder via $CINDER_SIMULATION_APP_DIR/install.sh"

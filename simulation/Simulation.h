@@ -13,6 +13,8 @@ using namespace physx;
 class Simulation : public App {
   public:
 	void setup() override;
+	void keyDown(KeyEvent event) override;
+	void keyUp(KeyEvent event) override;
 	void mouseDown( MouseEvent event ) override;
 	void mouseDrag( MouseEvent event ) override;
 	void update() override;
