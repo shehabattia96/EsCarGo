@@ -6,6 +6,7 @@ project( Simulation C CXX )
 get_filename_component( APP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/" ABSOLUTE )
 
 #### VCPKG
+set (snippetvehiclecommon_DIR "${APP_PATH}/include/snippetvehiclecommon")
 include("${APP_PATH}/FindPhysX.cmake")
 
 #### Build Cinder dependencies and main executable ####

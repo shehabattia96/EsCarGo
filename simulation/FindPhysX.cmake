@@ -27,7 +27,6 @@ set(VCPKG_INCLUDES ${PHYSX_INCLUDE_DIR})
 set(VCPKG_LIBRARIES ${PHYSX_LIBRARIES_VCPKG})
 
 #### Add snippetvehiclecommon sources based on source from PhysX git repo ####
-set (snippetvehiclecommon_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/snippetvehiclecommon")
 include_directories("${snippetvehiclecommon_DIR}")
 set (snippetvehiclecommon_SOURCES 
 	${snippetvehiclecommon_DIR}/SnippetVehicleSceneQuery.cpp 
