@@ -1,11 +1,10 @@
-
 #### Add PhysX library from vcpkg toolchain
 set(PHYSX_LIBPATH_SUFFIX "_64.lib")
 find_path(PHYSX_INCLUDE_DIR PxConfig.h)  # uses vcpkg toolchain
 find_library(PHYSX_LIBRARY PhysX)  # uses vcpkg toolchain
 get_filename_component(PHYSX_LIBRARY_DIR "${PHYSX_LIBRARY}" PATH)
 
-if(${BUILD_OS} STREQUAL "windows")
+if("${BUILD_OS}" STREQUAL "windows")
 	set(PHYSX_INCLUDE_DIR "${VCPKG_EXTRN_PATH}/installed/x64-windows-static/include")  # uses vcpkg toolchain
 	set(PHYSX_LIBRARY_DIR "${VCPKG_EXTRN_PATH}/installed/x64-windows-static/debug/lib")  # uses vcpkg toolchain
 	set(PHYSX_LIBPATH_SUFFIX "_static_64.lib") # static library needed
@@ -27,8 +26,8 @@ set( PHYSX_LIBRARIES_VCPKG
 set(VCPKG_INCLUDES ${PHYSX_INCLUDE_DIR})
 set(VCPKG_LIBRARIES ${PHYSX_LIBRARIES_VCPKG})
 
-#### Add snippetvehiclecommon sources from PhysX git repo submodule ####
-set (snippetvehiclecommon_DIR "${PHYSX_EXTRN_PATH}/snippets/snippetvehiclecommon")
+#### Add snippetvehiclecommon sources based on source from PhysX git repo ####
+set (snippetvehiclecommon_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/snippetvehiclecommon")
 include_directories("${snippetvehiclecommon_DIR}")
 set (snippetvehiclecommon_SOURCES 
 	${snippetvehiclecommon_DIR}/SnippetVehicleSceneQuery.cpp 

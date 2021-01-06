@@ -56,7 +56,7 @@ if (($BUILD_ONLY == 0)); then
 
     # Install physx
     physxStaticSuffix=""
-    if (($BUILD_OS == "windows"))
+    if (($BUILD_OS == "windows")); then
         physxStaticSuffix="-static"
     fi
     log "Running $vcpkg_DIR/vcpkg install physx:x64-$BUILD_OS$physxStaticSuffix"

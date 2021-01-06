@@ -62,25 +62,6 @@ void stepPhysics()
 	gScene->fetchResults(true);
 }
 
-
-
-	
-void cleanupPhysics()
-{
-	// PX_RELEASE(gMaterial);
-	// PX_RELEASE(gCooking);
-	// PX_RELEASE(gScene);
-	// PX_RELEASE(gDispatcher);
-	// PX_RELEASE(gPhysics);	
-	// if(gPvd)
-	// {
-	// 	PxPvdTransport* transport = gPvd->getTransport();
-	// 	gPvd->release();	gPvd = NULL;
-	// 	PX_RELEASE(transport);
-	// }
-	// PX_RELEASE(gFoundation);
-}
-
 // Vehicle SDK
 // based on physx\snippets\snippetvehicle4w\SnippetVehicle4W.cpp
 VehicleSceneQueryData* gVehicleSceneQueryData = NULL;
@@ -91,7 +72,7 @@ PxVehicleDrivableSurfaceToTireFrictionPairs* gFrictionPairs = NULL;
 PxRigidStatic* gGroundPlane = NULL;
 PxVehicleDrive4W* gVehicle4W = NULL;
 
-bool gIsVehicleInAir = false;
+bool gIsVehicleInAir = true;
 
 // based on physx\snippets\snippetvehicle4w\SnippetVehicle4W.cpp
 PxF32 gSteerVsForwardSpeedData[2*8] =
@@ -162,23 +143,6 @@ enum DriveMode
 };
 
 // based on physx\snippets\snippetvehicle4w\SnippetVehicle4W.cpp
-DriveMode gDriveModeOrder[] =
-{
-	eDRIVE_MODE_BRAKE,
-	eDRIVE_MODE_ACCEL_FORWARDS,
-	eDRIVE_MODE_BRAKE,
-	eDRIVE_MODE_ACCEL_REVERSE,
-	eDRIVE_MODE_BRAKE,
-	eDRIVE_MODE_HARD_TURN_LEFT, 
-	eDRIVE_MODE_BRAKE,
-	eDRIVE_MODE_HARD_TURN_RIGHT,
-	eDRIVE_MODE_ACCEL_FORWARDS,
-	eDRIVE_MODE_HANDBRAKE_TURN_LEFT,
-	eDRIVE_MODE_ACCEL_FORWARDS,
-	eDRIVE_MODE_HANDBRAKE_TURN_RIGHT,
-	eDRIVE_MODE_NONE
-};
-
 bool gMimicKeyInputs = true;
 
 VehicleDesc initVehicleDesc()
@@ -186,8 +150,8 @@ VehicleDesc initVehicleDesc()
 	//Set up the chassis mass, dimensions, moment of inertia, and center of mass offset.
 	//The moment of inertia is just the moment of inertia of a cuboid but modified for easier steering.
 	//Center of mass offset is 0.65m above the base of the chassis and 0.25m towards the front.
-	const PxF32 chassisMass = 1500.0f;
-	const PxVec3 chassisDims(2.5f,2.0f,5.0f);
+	const PxF32 chassisMass = 500.0f;
+	const PxVec3 chassisDims(2.5f,.5f,5.0f);
 	const PxVec3 chassisMOI
 		((chassisDims.y*chassisDims.y + chassisDims.z*chassisDims.z)*chassisMass/12.0f,
 		 (chassisDims.x*chassisDims.x + chassisDims.z*chassisDims.z)*0.8f*chassisMass/12.0f,
@@ -200,7 +164,7 @@ VehicleDesc initVehicleDesc()
 	const PxF32 wheelRadius = 0.5f;
 	const PxF32 wheelWidth = 0.4f;
 	const PxF32 wheelMOI = 0.5f*wheelMass*wheelRadius*wheelRadius;
-	const PxU32 nbWheels = 6;
+	const PxU32 nbWheels = 4;
 
 	VehicleDesc vehicleDesc;
 
@@ -283,7 +247,7 @@ void startTurnHardRightMode()
 	}
 	else
 	{
-		gVehicleInputData.setAnalogAccel(1.0f);
+		gVehicleInputData.setAnalogAccel(true);
 		gVehicleInputData.setAnalogSteer(1.0f);
 	}
 }
@@ -319,6 +283,8 @@ void startHandbrakeTurnRightMode()
 
 void releaseAllControls()
 {
+	if (gVehicle4W->mDriveDynData.getCurrentGear() == PxVehicleGearsData::eREVERSE)
+		gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
 	if(gMimicKeyInputs)
 	{
 		gVehicleInputData.setDigitalAccel(false);
@@ -357,7 +323,7 @@ void initVehiclePhysics()
 	//Create a vehicle that will drive on the plane.
 	VehicleDesc vehicleDesc = initVehicleDesc();
 	gVehicle4W = createVehicle4W(vehicleDesc, gPhysics, gCooking);
-	PxTransform startTransform(PxVec3(0, (vehicleDesc.chassisDims.y*0.5f + vehicleDesc.wheelRadius + 1.0f), 0), PxQuat(PxIdentity));
+	PxTransform startTransform(PxVec3(0, (vehicleDesc.chassisDims.y*0.5f + vehicleDesc.wheelRadius + 5.0f), 0), PxQuat(PxIdentity));
 	gVehicle4W->getRigidDynamicActor()->setGlobalPose(startTransform);
 	gScene->addActor(*gVehicle4W->getRigidDynamicActor());
 
@@ -367,74 +333,11 @@ void initVehiclePhysics()
 	gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
 	gVehicle4W->mDriveDynData.setUseAutoGears(true);
 
-	// startBrakeMode();
+	startBrakeMode();
 }
-
-// void incrementDrivingMode(const PxF32 timestep)
-// {
-// 	gVehicleModeTimer += timestep;
-// 	if(gVehicleModeTimer > gVehicleModeLifetime)
-// 	{
-// 		//If the mode just completed was eDRIVE_MODE_ACCEL_REVERSE then switch back to forward gears.
-// 		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
-// 		{
-// 			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
-// 		}
-
-// 		//Increment to next driving mode.
-// 		gVehicleModeTimer = 0.0f;
-// 		gVehicleOrderProgress++;
-// 		releaseAllControls();
-
-// 		//If we are at the end of the list of driving modes then start again.
-// 		if(eDRIVE_MODE_NONE == gDriveModeOrder[gVehicleOrderProgress])
-// 		{
-// 			gVehicleOrderProgress = 0;
-// 			gVehicleOrderComplete = true;
-// 		}
-
-// 		//Start driving in the selected mode.
-// 		DriveMode eDriveMode = gDriveModeOrder[gVehicleOrderProgress];
-// 		switch(eDriveMode)
-// 		{
-// 		case eDRIVE_MODE_ACCEL_FORWARDS:
-// 			startAccelerateForwardsMode();
-// 			break;
-// 		case eDRIVE_MODE_ACCEL_REVERSE:
-// 			startAccelerateReverseMode();
-// 			break;
-// 		case eDRIVE_MODE_HARD_TURN_LEFT:
-// 			startTurnHardLeftMode();
-// 			break;
-// 		case eDRIVE_MODE_HANDBRAKE_TURN_LEFT:
-// 			startHandbrakeTurnLeftMode();
-// 			break;
-// 		case eDRIVE_MODE_HARD_TURN_RIGHT:
-// 			startTurnHardRightMode();
-// 			break;
-// 		case eDRIVE_MODE_HANDBRAKE_TURN_RIGHT:
-// 			startHandbrakeTurnRightMode();
-// 			break;
-// 		case eDRIVE_MODE_BRAKE:
-// 			startBrakeMode();
-// 			break;
-// 		case eDRIVE_MODE_NONE:
-// 			break;
-// 		};
-
-// 		//If the mode about to start is eDRIVE_MODE_ACCEL_REVERSE then switch to reverse gears.
-// 		if(eDRIVE_MODE_ACCEL_REVERSE == gDriveModeOrder[gVehicleOrderProgress])
-// 		{
-// 			gVehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
-// 		}
-// 	}
-// }
 
 void stepVehiclePhysics()
 {
-	//Cycle through the driving modes to demonstrate how to accelerate/reverse/brake/turn etc.
-	//incrementDrivingMode(gTimestep);
-
 	//Update the control inputs for the vehicle.
 	if(gMimicKeyInputs)
 	{
@@ -458,19 +361,7 @@ void stepVehiclePhysics()
 	PxVehicleUpdates(gTimestep, grav, *gFrictionPairs, 1, vehicles, vehicleQueryResults);
 
 	//Work out if the vehicle is in the air.
-	// gIsVehicleInAir = gVehicle4W->getRigidDynamicActor()->isSleeping() ? false : PxVehicleIsInAir(vehicleQueryResults[0]);
-}
-
-	
-void cleanupVehiclePhysics()
-{
-	// gVehicle4W->getRigidDynamicActor()->release();
-	// gVehicle4W->free();
-	// PX_RELEASE(gGroundPlane);
-	// PX_RELEASE(gBatchQuery);
-	// gVehicleSceneQueryData->free(gAllocator);
-	// PX_RELEASE(gFrictionPairs);
-	// PxCloseVehicleSDK();
+	gIsVehicleInAir = gVehicle4W->getRigidDynamicActor()->isSleeping() ? false : PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
 #endif

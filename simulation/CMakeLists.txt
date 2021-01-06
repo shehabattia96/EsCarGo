@@ -24,9 +24,9 @@ add_custom_command(TARGET Simulation POST_BUILD
 
 #### tests	
 include(CTest)
-# if(BUILD_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(test)
-# endif()
+endif()
 
 
 message("Done building simulation")  

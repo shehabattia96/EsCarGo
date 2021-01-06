@@ -21,7 +21,6 @@ class Simulation : public App {
 	void draw() override;
 	void resize();
 	void updateSettingsSidebarParameters(bool updateNamesOfObjectsList);
-	void createSimulationObject(string objectId, PxRigidActor* actor, geom::SourceMods shape, gl::GlslProgRef shader, ci::ColorA* color);
 	void initWorld();
   private:
   	CameraPersp	mCam;
@@ -30,6 +29,9 @@ class Simulation : public App {
 	SettingsSidebarStruct::type settingsSidebar;
 	params::InterfaceGlRef settingsSidebarParameters;
 	bool mPrintFps;
+	void renderGeometry(std::string name, PxRigidActor* actor,  PxShape* shape, vec3 pose);
+	void drawSceneActors();
+	void createSimulationObject(string objectId, PxRigidActor* actor, geom::SourceMods shape, gl::GlslProgRef shader, ci::ColorA* color);
 };
 
 #endif

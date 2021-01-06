@@ -1,10 +1,6 @@
 [submodule "externals/Cinder-Simulation-App"]
 	path = externals/Cinder-Simulation-App
 	url = https://github.com/shehabattia96/Cinder-Simulation-App.git
-[submodule "externals/PhysX"]
-	path = externals/PhysX
-	url = git://github.com/NVIDIAGameWorks/PhysX.git
-	branch = 4.1
 [submodule "externals/vcpkg"]
 	path = externals/vcpkg
 	url = https://github.com/Microsoft/vcpkg.git
