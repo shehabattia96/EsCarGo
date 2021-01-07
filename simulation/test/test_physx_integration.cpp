@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include "cinder/app/App.h"
 
-#include "../PhysxIntegration.h"
+#include "../PhysxVehicle.h"
 
 using namespace std;
 

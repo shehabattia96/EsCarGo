@@ -4,27 +4,25 @@
 #include "Simulation.h"
 #include "PhysxIntegration.h"
 
-// references physx\snippets\snippetrender\SnippetRender.cpp
-#define MAX_NUM_MESH_VEC3S 1024
-void Simulation::renderGeometry(std::string name, PxRigidActor* actor, PxShape* shape, vec3 pose)
+// references physx\snippets\snippetrender\SnippetRender.cpp and converts a PxShape to a geom::SourceMods.
+geom::SourceMods physxShapeToCinderSource(PxShape* shape, vec3 pose)
 {
-	
 	const PxGeometryHolder h = shape->getGeometry();
 	const PxGeometry& geom = h.any();
+	geom::SourceMods outputSource;
 	switch(geom.getType())
 	{
 		case PxGeometryType::eBOX:
 		{
-			const PxBoxGeometry& boxGeom = static_cast<const PxBoxGeometry&>(geom);
-			glScalef(boxGeom.halfExtents.x, boxGeom.halfExtents.y, boxGeom.halfExtents.z);
-			gl::drawCube(pose, vec3(2));
+			const PxBoxGeometry& boxGeom = static_cast<const PxBoxGeometry&>(geom);			
+			outputSource = geom::Cube() >> geom::Scale(glm::vec3(boxGeom.halfExtents.x, boxGeom.halfExtents.y, boxGeom.halfExtents.z));
 		}
 		break;
 
 		case PxGeometryType::eSPHERE:
 		{
 			const PxSphereGeometry& sphereGeom = static_cast<const PxSphereGeometry&>(geom);
-			gl::drawSphere(pose, sphereGeom.radius, -1);
+			outputSource = geom::Sphere().radius(sphereGeom.radius) >> geom::Translate(pose);
 		}
 		break;
 
@@ -68,7 +66,7 @@ void Simulation::renderGeometry(std::string name, PxRigidActor* actor, PxShape* 
 
 					PxVec3 fnormal = e0.cross(e1);
 					fnormal.normalize();
-			
+					#define MAX_NUM_MESH_VEC3S 1024
 					if(numTotalTriangles*6 < MAX_NUM_MESH_VEC3S)
 					{
 						PxVec3 vertex = verts[vref0];
@@ -84,23 +82,21 @@ void Simulation::renderGeometry(std::string name, PxRigidActor* actor, PxShape* 
 					}
 				}
 			}
-			geom::SourceMods geomGroundPlaneShape = triMeshShape >> geom::Scale(glm::vec3(scale.x, scale.y, scale.z)) >> geom::Translate(pose);
-			ci::ColorA color = ci::ColorA( CM_RGB, 1, 0, 1, 1 );
-			createSimulationObject("convexMesh " + name, actor, geomGroundPlaneShape, NULL, &color);
+			outputSource = triMeshShape >> geom::Scale(glm::vec3(scale.x, scale.y, scale.z)) >> geom::Translate(pose);
 		}
 		break;
 		case PxGeometryType::ePLANE:
         {
-			geom::SourceMods geomGroundPlaneShape = geom::Cube() >> geom::Scale(glm::vec3(0.1, 200, 200));
 			ci::ColorA whiteColor = ci::ColorA( CM_RGB, 1, 1, 1, 1 );
-			createSimulationObject("plane " + name, actor, geomGroundPlaneShape, NULL, &whiteColor);
+			outputSource = geom::Cube() >> geom::Scale(glm::vec3(0.1, 200, 200));
         }
 		break;
 		case PxGeometryType::eINVALID:
 		case PxGeometryType::eHEIGHTFIELD:
 		case PxGeometryType::eGEOMETRY_COUNT:
-		break;	
+		break;
 	}
+	return outputSource;
 }
 
 
@@ -115,10 +111,13 @@ void Simulation::drawSceneActors() {
 		for(int i=0; i<numActors;i++)
 		{
 			const int nbShapes = actors[i]->getNbShapes();
-			PX_ASSERT(nbShapes <= MAX_NUM_ACTOR_SHAPES);
             physx::PxShape** shapes = (physx::PxShape**)gAllocator.allocate(sizeof(physx::PxShape*)*nbShapes, nullptr, __FILE__, __LINE__);
 			actors[i]->getShapes(shapes, nbShapes);
+			geom::SourceMods cinderSource;
+			std::string objectid = shapes[0]->getGeometry().any().getType() == PxGeometryType::ePLANE ? "plane" : "mesh";
+			objectid += " actor #"+std::to_string(i);
 
+			// iterate over all the shapes in the actor (e.g. vehicle actor has chassis and wheels as different shapes)
 			for(int j=0;j<nbShapes;j++)
 			{
 				const PxMat44 shapePose(PxShapeExt::getGlobalPose(*shapes[j], *actors[i]));
@@ -126,8 +125,12 @@ void Simulation::drawSceneActors() {
 				
 				physx::PxTransform localPose = shapes[j]->getLocalPose();
 				vec3 pose = vec3(localPose.p.x, localPose.p.y, localPose.p.z);
-				renderGeometry("act"+std::to_string(i)+"shp"+std::to_string(j),actors[i], shapes[j], pose);
+
+				// merge all the physx shapes into one cinder source
+				cinderSource = cinderSource & physxShapeToCinderSource(shapes[j], pose);
 			}
+
+			createSimulationObject(objectid, actors[i], cinderSource, NULL, NULL);
 		}
 	}
 

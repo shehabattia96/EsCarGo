@@ -269,7 +269,7 @@ PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehicle4WDesc, PxPhysics* p
 	{
 		//Diff
 		PxVehicleDifferential4WData diff;
-		diff.mType=PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+		diff.mType=PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
 		driveSimData.setDiffData(diff);
 
 		//Engine

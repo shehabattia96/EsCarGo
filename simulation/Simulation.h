@@ -29,7 +29,6 @@ class Simulation : public App {
 	SettingsSidebarStruct::type settingsSidebar;
 	params::InterfaceGlRef settingsSidebarParameters;
 	bool mPrintFps;
-	void renderGeometry(std::string name, PxRigidActor* actor,  PxShape* shape, vec3 pose);
 	void drawSceneActors();
 	void createSimulationObject(string objectId, PxRigidActor* actor, geom::SourceMods shape, gl::GlslProgRef shader, ci::ColorA* color);
 };
