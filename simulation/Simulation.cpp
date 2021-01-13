@@ -5,15 +5,17 @@
 #include "./PhysxCinder.h"
 #include "./Sidebar.cpp"
 
+
 bool isInitPhysics = false;
 
 void Simulation::initWorld() {
 	initPhysics();
 	initMap();
 	initVehiclePhysics();
-	initVehiclePhysics();
+
 	glMatrixMode(GL_MODELVIEW);
-	drawSceneActors();
+	createSimulationObjectsFromSceneActors();
+	
 	isInitPhysics = true;
 }
 

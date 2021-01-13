@@ -29,7 +29,7 @@ class Simulation : public App {
 	SettingsSidebarStruct::type settingsSidebar;
 	params::InterfaceGlRef settingsSidebarParameters;
 	bool mPrintFps;
-	void drawSceneActors();
+	void createSimulationObjectsFromSceneActors();
 	void createSimulationObject(string objectId, PxRigidActor* actor, geom::SourceMods shape, gl::GlslProgRef shader, ci::ColorA* color);
 };
 

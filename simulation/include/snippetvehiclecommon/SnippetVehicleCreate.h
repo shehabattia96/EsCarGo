@@ -108,12 +108,14 @@ struct VehicleDesc
 };
 
 PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehDesc, PxPhysics* physics, PxCooking* cooking);
+PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehDesc, PxRigidDynamic* veh4WActor, PxPhysics* physics, PxCooking* cooking);
 
 PxVehicleDriveTank* createVehicleTank(const VehicleDesc& vehDesc, PxPhysics* physics, PxCooking* cooking);
 
 PxVehicleNoDrive* createVehicleNoDrive(const VehicleDesc& vehDesc, PxPhysics* physics, PxCooking* cooking);
 
 ////////////////////////////////////////////////
+PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts, PxPhysics& physics, PxCooking& cooking);
 
 PxConvexMesh* createChassisMesh(const PxVec3 dims, PxPhysics& physics, PxCooking& cooking);
 

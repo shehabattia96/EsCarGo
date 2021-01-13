@@ -59,7 +59,7 @@ PxRigidStatic* createDrivablePlane(const PxFilterData& simFilterData, PxMaterial
 	return groundPlane;
 }
 
-static PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts, PxPhysics& physics, PxCooking& cooking)
+PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts, PxPhysics& physics, PxCooking& cooking)
 {
 	// Create descriptor for convex mesh
 	PxConvexMeshDesc convexDesc;
@@ -101,18 +101,19 @@ PxConvexMesh* createChassisMesh(const PxVec3 dims, PxPhysics& physics, PxCooking
 
 PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius, PxPhysics& physics, PxCooking& cooking)
 {
-	PxVec3 points[2*16];
-	for(PxU32 i = 0; i < 16; i++)
+	#define wheelResolution 16
+	PxVec3 points[2*wheelResolution];
+	for(PxU32 i = 0; i < wheelResolution; i++)
 	{
-		const PxF32 cosTheta = PxCos(i*PxPi*2.0f/16.0f);
-		const PxF32 sinTheta = PxSin(i*PxPi*2.0f/16.0f);
+		const PxF32 cosTheta = PxCos(i*PxPi*2.0f/(float)wheelResolution);
+		const PxF32 sinTheta = PxSin(i*PxPi*2.0f/(float)wheelResolution);
 		const PxF32 y = radius*cosTheta;
 		const PxF32 z = radius*sinTheta;
 		points[2*i+0] = PxVec3(-width/2.0f, y, z);
 		points[2*i+1] = PxVec3(+width/2.0f, y, z);
 	}
 
-	return createConvexMesh(points,32,physics,cooking);
+	return createConvexMesh(points,2*wheelResolution,physics,cooking);
 }
 
 PxRigidDynamic* createVehicleActor

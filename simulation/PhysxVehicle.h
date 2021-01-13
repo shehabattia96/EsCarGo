@@ -2,6 +2,7 @@
 #define SimulationVehicle_h
 
 #include "vehicle/PxVehicleUtil.h" // PhysX api
+#include "cinder/ObjLoader.h"
 
 #include "./PhysXIntegration.h"
 #include "./SimulationVehicleConfig.h"
@@ -125,6 +126,54 @@ VehicleDesc initVehicleDesc()
 	return vehicleDesc;
 }
 
+
+
+PxRigidDynamic* initVehicleActor(const VehicleDesc& vehicle4WDesc, PxConvexMesh* wheelMesh, PxConvexMesh* chassisConvexMesh, PxPhysics* physics)
+{
+	const PxU32 numWheels = vehicle4WDesc.numWheels;
+
+	const PxFilterData& chassisSimFilterData = vehicle4WDesc.chassisSimFilterData;
+	const PxFilterData& wheelSimFilterData = vehicle4WDesc.wheelSimFilterData;
+	//Construct a physx actor with shapes for the chassis and wheels.
+	//Set the rigid body mass, moment of inertia, and center of mass offset.
+	PxRigidDynamic* veh4WActor = NULL;
+	{
+		//Assume all wheels are identical for simplicity.
+		PxConvexMesh* wheelConvexMeshes[PX_MAX_NB_WHEELS];
+		PxMaterial* wheelMaterials[PX_MAX_NB_WHEELS];
+
+		//Set the meshes and materials for the driven wheels.
+		for(PxU32 i = PxVehicleDrive4WWheelOrder::eFRONT_LEFT; i <= PxVehicleDrive4WWheelOrder::eREAR_RIGHT; i++)
+		{
+			wheelConvexMeshes[i] = wheelMesh;
+			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
+		}
+		//Set the meshes and materials for the non-driven wheels
+		for(PxU32 i = PxVehicleDrive4WWheelOrder::eREAR_RIGHT + 1; i < numWheels; i++)
+		{
+			wheelConvexMeshes[i] = wheelMesh;
+			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
+		}
+
+		PxConvexMesh* chassisConvexMeshes[1] = {chassisConvexMesh};
+		PxMaterial* chassisMaterials[1] = {vehicle4WDesc.chassisMaterial};
+
+		//Rigid body data.
+		PxVehicleChassisData rigidBodyData;
+		rigidBodyData.mMOI = vehicle4WDesc.chassisMOI;
+		rigidBodyData.mMass = vehicle4WDesc.chassisMass;
+		rigidBodyData.mCMOffset = vehicle4WDesc.chassisCMOffset;
+
+		veh4WActor = createVehicleActor
+			(rigidBodyData,
+			wheelMaterials, wheelConvexMeshes, numWheels, wheelSimFilterData,
+			chassisMaterials, chassisConvexMeshes, 1, chassisSimFilterData,
+			*physics);
+	}
+
+	return veh4WActor;
+}
+
 std::vector<PxVehicleWheels*> vehiclesWheels;
 std::vector<PxVehicleDrive4WRawInputData> vehiclesInputData;
 
@@ -143,7 +192,6 @@ void initVehiclePhysics()
 	PxVehicleSetUpdateMode(PxVehicleUpdateMode::eACCELERATION);
 
 	//Create the batched scene queries for the suspension raycasts.
-	
 	physx::PxU32 numVehicles = static_cast<physx::PxU32>(vehiclesWheels.size()) + 1;
 	gVehicleSceneQueryData = VehicleSceneQueryData::allocate(numVehicles, PX_MAX_NB_WHEELS, 1, numVehicles, WheelSceneQueryPreFilterBlocking, NULL, gAllocator);
 	gBatchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *gVehicleSceneQueryData, gScene);
@@ -153,7 +201,34 @@ void initVehiclePhysics()
 
 	//Create a vehicle that will drive on the plane.
 	VehicleDesc vehicleDesc = initVehicleDesc();
-	PxVehicleDrive4W* vehicle4W = createVehicle4W(vehicleDesc, gPhysics, gCooking);
+	
+	//Wheel mesh
+	PxConvexMesh* wheelMesh = snippetvehicle::createWheelMesh(vehicleDesc.wheelWidth, vehicleDesc.wheelRadius, *gPhysics, *gCooking);
+	//Chassis mesh
+	PxConvexMesh* chassisConvexMesh;
+	ObjLoader loader( loadFile( "./resources/models/temp_obj/chassis.obj" ) );
+	TriMesh mesh(loader);
+	size_t numVerticies = mesh.getNumVertices();
+	if (numVerticies > 0) {
+		//Scale chassis mesh so that it fits chassisDimensions
+		AxisAlignedBox boundingBox = mesh.calcBoundingBox();
+		vec3 maxDimensions = boundingBox.getMax();
+		float scalingFactor = (vehicleDesc.chassisDims.z / 2.0f) / maxDimensions.z;
+		mesh = mesh >> geom::Scale(scalingFactor);
+		// copy verticies from TriMesh to PxVec3 vector:
+		std::vector<PxVec3> physxShapeVerticies;
+		const ci::vec3* positions = mesh.getPositions<3>();
+		for (size_t i = 0; i < numVerticies; ++i) {
+			ci::vec3 position = positions[i];
+			PxVec3 vertex = PxVec3(position.x, position.y, position.z);
+			physxShapeVerticies.push_back(vertex);
+		}
+		chassisConvexMesh = snippetvehicle::createConvexMesh(&physxShapeVerticies[0], static_cast<PxU32>(numVerticies), *gPhysics, *gCooking);
+	} else {
+		chassisConvexMesh = createChassisMesh(vehicleDesc.chassisDims, *gPhysics, *gCooking);
+	}
+	PxRigidDynamic* veh4WActor = initVehicleActor(vehicleDesc, wheelMesh, chassisConvexMesh, gPhysics);
+	PxVehicleDrive4W* vehicle4W = snippetvehicle::createVehicle4W(vehicleDesc, veh4WActor, gPhysics, gCooking);
 	vehiclesWheels.push_back(vehicle4W);
 
 	const PxTransform startTransform(PxVec3(vehiclesWheels.size() * vehicleDesc.chassisDims.x * 2, (vehicleDesc.chassisDims.y*0.5f + vehicleDesc.wheelRadius + 5.0f), 0), PxQuat(PxIdentity));

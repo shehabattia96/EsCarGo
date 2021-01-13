@@ -66,20 +66,16 @@ geom::SourceMods physxShapeToCinderSource(PxShape* shape, vec3 pose)
 
 					PxVec3 fnormal = e0.cross(e1);
 					fnormal.normalize();
-					#define MAX_NUM_MESH_VEC3S 1024
-					if(numTotalTriangles*6 < MAX_NUM_MESH_VEC3S)
-					{
-						PxVec3 vertex = verts[vref0];
-						triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
-						triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
-						vertex = verts[vref1];
-						triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
-						triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
-						vertex = verts[vref2];
-						triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
-						triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
-						numTotalTriangles++;
-					}
+
+					PxVec3 vertex = verts[vref0];
+					triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
+					triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
+					vertex = verts[vref1];
+					triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
+					triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
+					vertex = verts[vref2];
+					triMeshShape.appendPosition(vec3(vertex.x, vertex.y, vertex.z));
+					triMeshShape.appendNormal(vec3(fnormal.x, fnormal.y, fnormal.z));
 				}
 			}
 			outputSource = triMeshShape >> geom::Scale(glm::vec3(scale.x, scale.y, scale.z)) >> geom::Translate(pose);
@@ -100,7 +96,8 @@ geom::SourceMods physxShapeToCinderSource(PxShape* shape, vec3 pose)
 }
 
 
-void Simulation::drawSceneActors() {
+void Simulation::createSimulationObjectsFromSceneActors()
+{
 	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
 	if(nbActors)
 	{

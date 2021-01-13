@@ -196,56 +196,12 @@ void setupWheelsSimulationData
 
 } //namespace fourwheel
 
-PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehicle4WDesc, PxPhysics* physics, PxCooking* cooking)
+PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehicle4WDesc, PxRigidDynamic* veh4WActor, PxPhysics* physics, PxCooking* cooking)
 {
 	const PxVec3 chassisDims = vehicle4WDesc.chassisDims;
 	const PxF32 wheelWidth = vehicle4WDesc.wheelWidth;
 	const PxF32 wheelRadius = vehicle4WDesc.wheelRadius;
 	const PxU32 numWheels = vehicle4WDesc.numWheels;
-
-	const PxFilterData& chassisSimFilterData = vehicle4WDesc.chassisSimFilterData;
-	const PxFilterData& wheelSimFilterData = vehicle4WDesc.wheelSimFilterData;
-
-	//Construct a physx actor with shapes for the chassis and wheels.
-	//Set the rigid body mass, moment of inertia, and center of mass offset.
-	PxRigidDynamic* veh4WActor = NULL;
-	{
-		//Construct a convex mesh for a cylindrical wheel.
-		PxConvexMesh* wheelMesh = createWheelMesh(wheelWidth, wheelRadius, *physics, *cooking);
-		//Assume all wheels are identical for simplicity.
-		PxConvexMesh* wheelConvexMeshes[PX_MAX_NB_WHEELS];
-		PxMaterial* wheelMaterials[PX_MAX_NB_WHEELS];
-
-		//Set the meshes and materials for the driven wheels.
-		for(PxU32 i = PxVehicleDrive4WWheelOrder::eFRONT_LEFT; i <= PxVehicleDrive4WWheelOrder::eREAR_RIGHT; i++)
-		{
-			wheelConvexMeshes[i] = wheelMesh;
-			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
-		}
-		//Set the meshes and materials for the non-driven wheels
-		for(PxU32 i = PxVehicleDrive4WWheelOrder::eREAR_RIGHT + 1; i < numWheels; i++)
-		{
-			wheelConvexMeshes[i] = wheelMesh;
-			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
-		}
-
-		//Chassis just has a single convex shape for simplicity.
-		PxConvexMesh* chassisConvexMesh = createChassisMesh(chassisDims, *physics, *cooking);
-		PxConvexMesh* chassisConvexMeshes[1] = {chassisConvexMesh};
-		PxMaterial* chassisMaterials[1] = {vehicle4WDesc.chassisMaterial};
-
-		//Rigid body data.
-		PxVehicleChassisData rigidBodyData;
-		rigidBodyData.mMOI = vehicle4WDesc.chassisMOI;
-		rigidBodyData.mMass = vehicle4WDesc.chassisMass;
-		rigidBodyData.mCMOffset = vehicle4WDesc.chassisCMOffset;
-
-		veh4WActor = createVehicleActor
-			(rigidBodyData,
-			wheelMaterials, wheelConvexMeshes, numWheels, wheelSimFilterData,
-			chassisMaterials, chassisConvexMeshes, 1, chassisSimFilterData,
-			*physics);
-	}
 
 	//Set up the sim data for the wheels.
 	PxVehicleWheelsSimData* wheelsSimData = PxVehicleWheelsSimData::allocate(numWheels);
@@ -314,6 +270,60 @@ PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehicle4WDesc, PxPhysics* p
 	wheelsSimData->free();
 
 	return vehDrive4W;
+}
+
+
+PxVehicleDrive4W* createVehicle4W(const VehicleDesc& vehicle4WDesc, PxPhysics* physics, PxCooking* cooking)
+{
+	const PxVec3 chassisDims = vehicle4WDesc.chassisDims;
+	const PxF32 wheelWidth = vehicle4WDesc.wheelWidth;
+	const PxF32 wheelRadius = vehicle4WDesc.wheelRadius;
+	const PxU32 numWheels = vehicle4WDesc.numWheels;
+
+	const PxFilterData& chassisSimFilterData = vehicle4WDesc.chassisSimFilterData;
+	const PxFilterData& wheelSimFilterData = vehicle4WDesc.wheelSimFilterData;
+	//Construct a physx actor with shapes for the chassis and wheels.
+	//Set the rigid body mass, moment of inertia, and center of mass offset.
+	PxRigidDynamic* veh4WActor = NULL;
+	{
+		//Construct a convex mesh for a cylindrical wheel.
+		PxConvexMesh* wheelMesh = createWheelMesh(wheelWidth, wheelRadius, *physics, *cooking);
+		//Assume all wheels are identical for simplicity.
+		PxConvexMesh* wheelConvexMeshes[PX_MAX_NB_WHEELS];
+		PxMaterial* wheelMaterials[PX_MAX_NB_WHEELS];
+
+		//Set the meshes and materials for the driven wheels.
+		for(PxU32 i = PxVehicleDrive4WWheelOrder::eFRONT_LEFT; i <= PxVehicleDrive4WWheelOrder::eREAR_RIGHT; i++)
+		{
+			wheelConvexMeshes[i] = wheelMesh;
+			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
+		}
+		//Set the meshes and materials for the non-driven wheels
+		for(PxU32 i = PxVehicleDrive4WWheelOrder::eREAR_RIGHT + 1; i < numWheels; i++)
+		{
+			wheelConvexMeshes[i] = wheelMesh;
+			wheelMaterials[i] = vehicle4WDesc.wheelMaterial;
+		}
+
+		//Chassis just has a single convex shape for simplicity.
+		PxConvexMesh* chassisConvexMesh = createChassisMesh(chassisDims, *physics, *cooking);
+		PxConvexMesh* chassisConvexMeshes[1] = {chassisConvexMesh};
+		PxMaterial* chassisMaterials[1] = {vehicle4WDesc.chassisMaterial};
+
+		//Rigid body data.
+		PxVehicleChassisData rigidBodyData;
+		rigidBodyData.mMOI = vehicle4WDesc.chassisMOI;
+		rigidBodyData.mMass = vehicle4WDesc.chassisMass;
+		rigidBodyData.mCMOffset = vehicle4WDesc.chassisCMOffset;
+
+		veh4WActor = createVehicleActor
+			(rigidBodyData,
+			wheelMaterials, wheelConvexMeshes, numWheels, wheelSimFilterData,
+			chassisMaterials, chassisConvexMeshes, 1, chassisSimFilterData,
+			*physics);
+	}
+
+	return createVehicle4W(vehicle4WDesc, veh4WActor, physics, cooking);
 }
 
 } //namespace snippetvehicle
